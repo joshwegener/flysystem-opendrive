@@ -1,0 +1,19 @@
+{
+    "name": "joshwegener/flysystem-opendrive",
+    "description": "OpenDrive adapter for the flysystem filesystem abstraction library",
+    "type": "library",
+    "require": {
+        "league/flysystem": "^1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Josh Wegener",
+            "email": "JoshWegener@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"JoshWegener\\FlysystemOpenDrive\\": "src/"}
+    }
+    "minimum-stability": "dev"
+}
