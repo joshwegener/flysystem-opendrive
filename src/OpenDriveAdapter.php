@@ -6,15 +6,19 @@ use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 use League\Flysystem\Adapter\Polyfill\StreamedTrait;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
+use JoshWegener\FlysystemOpenDrive\OpenDriveClient;
 
 class OpenDriveAdapter implements AdapterInterface
 {
     use NotSupportingVisibilityTrait;
     use StreamedTrait;
 
-    public function __construct()
+    private $client;
+
+    public function __construct(OpenDriveClient $client)
     {
-        $this->validSession();
+        $this->client = $client;
+        $this->client->validSession();
     }
 
     /**
