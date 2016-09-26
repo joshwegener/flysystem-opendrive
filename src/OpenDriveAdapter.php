@@ -7,10 +7,15 @@ use League\Flysystem\Adapter\Polyfill\StreamedTrait;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
 
-class OneDriveAdapter implements AdapterInterface
+class OpenDriveAdapter implements AdapterInterface
 {
     use NotSupportingVisibilityTrait;
     use StreamedTrait;
+
+    public function __construct()
+    {
+        $this->validSession();
+    }
 
     /**
      * Rename a file.
