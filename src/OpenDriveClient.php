@@ -31,8 +31,7 @@ class OpenDriveClient
         );
 
         $response = $this->sendRequest($postData, 'session/login.json', SELF::POST);
-
-        print_r($response);
+        //SessionID
     }
 
     private function sendRequest($data, $endPoint, $post = false)
@@ -54,6 +53,14 @@ class OpenDriveClient
             throw new OpenDriveClientException('Error when trying to run curl command.');
         }
 
-        return json_decode($response, TRUE);
+        $response = json_decode($response, TRUE);
+
+        return $this->checkForErrors($response);
+    }
+
+    private function checkForErrors($response)
+    {
+        print_r($response['errors']);
+        return $response;
     }
 }
