@@ -4,8 +4,9 @@ namespace JoshWegener\FlysystemOpenDrive;
 
 class OpenDriveClient
 {
-    public $apiUrl = 'https://dev.opendrive.com/api/v1/';
+    public $apiUrl = 'https://dev.opendrive.com/api/v1';
     private $sessionId;
+
     const POST = TRUE;
     const GET = FALSE;
 
