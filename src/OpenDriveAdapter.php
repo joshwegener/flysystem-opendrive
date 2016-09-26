@@ -18,7 +18,6 @@ class OpenDriveAdapter implements AdapterInterface
     public function __construct(OpenDriveClient $client)
     {
         $this->client = $client;
-        $this->client->validSession();
     }
 
     /**
@@ -107,6 +106,7 @@ class OpenDriveAdapter implements AdapterInterface
     public function listContents($directory = '', $recursive = false)
     {
         // TODO: Implement listContents() method.
+        return [];
     }
 
     /**

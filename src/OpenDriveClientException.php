@@ -2,6 +2,6 @@
 
 namespace JoshWegener\FlysystemOpenDrive;
 
-class OneDriveClientException extends \Exception
+class OpenDriveClientException extends \Exception
 {
 }

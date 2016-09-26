@@ -2,6 +2,8 @@
 
 namespace JoshWegener\FlysystemOpenDrive;
 
+use JoshWegener\FlysystemOpenDrive\OpenDriveClientException;
+
 class OpenDriveClient
 {
     public $apiUrl = 'https://dev.opendrive.com/api/v1';
@@ -31,7 +33,7 @@ class OpenDriveClient
         );
 
         $response = $this->sendRequest($postData, 'session/login.json', SELF::POST);
-        //SessionID
+        $this->sessionId = $response['SessionID'];
     }
 
     private function sendRequest($data, $endPoint, $post = false)
@@ -60,7 +62,9 @@ class OpenDriveClient
 
     private function checkForErrors($response)
     {
-        print_r($response['errors']);
+        if (true === isset($response['error'])) {
+            throw new OpenDriveClientException("Unexpected error code: {$response['error']['code']}:{$response['error']['message']}");
+        }
         return $response;
     }
 }
