@@ -105,8 +105,45 @@ class OpenDriveAdapter implements AdapterInterface
      */
     public function listContents($directory = '', $recursive = false)
     {
-        // TODO: Implement listContents() method.
-        return [];
+        $directoryId = false;
+        $results = [];
+
+        if ('' == $directory || '/' == $directory) {
+            $directory = '';
+            $directoryId = 0;
+        } else {
+            $directoryId = $this->client->getIdByPath($directory);
+        }
+
+        $response = $this->client->getContents($directoryId);
+
+        foreach ($response['Files'] AS $file) {
+            $path = '' == $directory ? $file['Name']: "{$directory}/{$file['Name']}";
+            $flysystemMetadata = new FlysystemMetadata(FlysystemMetadata::TYPE_FILE, $path);
+            $flysystemMetadata->timestamp = $file['DateModified'];
+            $flysystemMetadata->mimetype = $file['Extension'];
+            $flysystemMetadata->size = $file['Size'];
+
+            $results[] = $flysystemMetadata->toArray();
+        }
+
+        if (isset($response['Folders'])) {
+            foreach ($response['Folders'] AS $folder) {
+                $path = '' == $directory ? $folder['Name']: "{$directory}/{$folder['Name']}";
+                $flysystemMetadata = new FlysystemMetadata(FlysystemMetadata::TYPE_DIRECTORY, $path);
+                $flysystemMetadata->timestamp = $folder['DateModified'];
+                $flysystemMetadata->mimetype = null;
+                $flysystemMetadata->size = null;
+
+                $results[] = $flysystemMetadata->toArray();
+
+                if ($recursive) {
+                    $results = array_merge($results, $this->listContents($results, true));
+                }
+            }
+        }
+
+        return $results;
     }
 
     /**
