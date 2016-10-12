@@ -13,6 +13,9 @@ class OpenDriveAdapter implements AdapterInterface
     use NotSupportingVisibilityTrait;
     use StreamedTrait;
 
+    const TYPE_FILE = 'file';
+    const TYPE_DIRECTORY = 'dir';
+
     private $client;
 
     public function __construct(OpenDriveClient $client)
@@ -30,7 +33,10 @@ class OpenDriveAdapter implements AdapterInterface
      */
     public function rename($path, $newpath)
     {
-        // TODO: Implement rename() method.
+        $fileId = $this->client->getFileIdByPath($path);
+        $folderId = $this->client->getFolderIdByPath(dirname($newpath));
+
+        return $this->client->moveOrCopyFile($fileId, $folderId, basename($newpath), true);
     }
 
     /**
@@ -43,7 +49,10 @@ class OpenDriveAdapter implements AdapterInterface
      */
     public function copy($path, $newpath)
     {
-        // TODO: Implement copy() method.
+        $fileId = $this->client->getFileIdByPath($path);
+        $folderId = $this->client->getFolderIdByPath(dirname($newpath));
+
+        return $this->client->moveOrCopyFile($fileId, $folderId, basename($newpath), false);
     }
 
     /**
@@ -55,7 +64,8 @@ class OpenDriveAdapter implements AdapterInterface
      */
     public function delete($path)
     {
-        // TODO: Implement delete() method.
+        $fileId = $this->client->getFileIdByPath($path);
+        return $this->client->deleteFile($fileId);
     }
 
     /**
@@ -67,7 +77,8 @@ class OpenDriveAdapter implements AdapterInterface
      */
     public function deleteDir($dirname)
     {
-        // TODO: Implement deleteDir() method.
+        $fileId = $this->client->getFolderIdByPath($dirname);
+        return $this->client->deleteFolder($fileId);
     }
 
     /**
@@ -80,7 +91,25 @@ class OpenDriveAdapter implements AdapterInterface
      */
     public function createDir($dirname, Config $config)
     {
-        // TODO: Implement createDir() method.
+        $parentFolderId = 0;
+        $folderParts = explode('/', $dirname);
+        $folderName = false;
+
+        if (count($folderParts) != 1) {
+            $folderName = array_pop($folderParts);
+            $parentPath = implode("/", $folderParts);
+            $parentFolderId = $this->client->getFolderIdByPath($parentPath);
+        }
+
+        $folder = $this->client->createFolder($folderName, $parentFolderId);
+
+        $folder['path'] = $dirname;
+        $folder['type'] = self::TYPE_DIRECTORY;
+        $folder['timestamp'] = $folder['DateModified'];
+        $folder['mimetype'] = null;
+        $folder['size'] = null;
+
+        return $folder;
     }
 
     /**
@@ -92,7 +121,13 @@ class OpenDriveAdapter implements AdapterInterface
      */
     public function has($path)
     {
-        // TODO: Implement has() method.
+        try {
+            $this->client->getFileIdByPath($path);
+        } catch (OpenDriveClientException $e) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -112,30 +147,34 @@ class OpenDriveAdapter implements AdapterInterface
             $directory = '';
             $directoryId = 0;
         } else {
-            $directoryId = $this->client->getIdByPath($directory);
+            $directoryId = $this->client->getFolderIdByPath($directory);
         }
 
         $response = $this->client->getContents($directoryId);
 
         foreach ($response['Files'] AS $file) {
-            $path = '' == $directory ? $file['Name']: "{$directory}/{$file['Name']}";
-            $flysystemMetadata = new FlysystemMetadata(FlysystemMetadata::TYPE_FILE, $path);
-            $flysystemMetadata->timestamp = $file['DateModified'];
-            $flysystemMetadata->mimetype = $file['Extension'];
-            $flysystemMetadata->size = $file['Size'];
+            $path = '' == $directory ? $file['Name'] : "{$directory}/{$file['Name']}";
 
-            $results[] = $flysystemMetadata->toArray();
+            $file['path'] = $path;
+            $file['type'] = self::TYPE_FILE;
+            $file['timestamp'] = $file['DateModified'];
+            $file['mimetype'] = $file['Extension'];
+            $file['size'] = $file['Size'];
+
+            $results[] = $file;
         }
 
         if (isset($response['Folders'])) {
             foreach ($response['Folders'] AS $folder) {
-                $path = '' == $directory ? $folder['Name']: "{$directory}/{$folder['Name']}";
-                $flysystemMetadata = new FlysystemMetadata(FlysystemMetadata::TYPE_DIRECTORY, $path);
-                $flysystemMetadata->timestamp = $folder['DateModified'];
-                $flysystemMetadata->mimetype = null;
-                $flysystemMetadata->size = null;
+                $path = '' == $directory ? $folder['Name'] : "{$directory}/{$folder['Name']}";
 
-                $results[] = $flysystemMetadata->toArray();
+                $folder['path'] = $path;
+                $folder['type'] = self::TYPE_DIRECTORY;
+                $folder['timestamp'] = $folder['DateModified'];
+                $folder['mimetype'] = null;
+                $folder['size'] = null;
+
+                $results[] = $folder;
 
                 if ($recursive) {
                     $results = array_merge($results, $this->listContents($results, true));
@@ -155,6 +194,25 @@ class OpenDriveAdapter implements AdapterInterface
      */
     public function getMetadata($path)
     {
+        /*
+         * https://www.opendrive.com/wp-content/uploads/guides/OpenDrive_API_guide.pdf
+         * https://laravel.com/docs/5.3/filesystem
+         *
+ole: 1 and 2
+URL Structure: /file/info.json/{file_id}
+Method: Get
+Parameters:
+file_id: string (required) – File ID.
+session_id: string - Session ID.
+sharing_id: string – Sharing ID
+
+URL Structure: /folder/info.json/{session_id}/{folder_id}
+Method: Get
+Parameters:
+session_id: string (required) - Session ID.
+folder_id: string (required) - Folder ID.
+
+         */
         // TODO: Implement getMetadata() method.
     }
 
